@@ -1,0 +1,89 @@
+import gitlab
+import os
+import argparse
+import logging
+import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Gitlab PAT is obtained from env vars.
+gitlab_pat = os.getenv('GL_PRIVATE_TOKEN')
+if not gitlab_pat:
+    logging.error('GitLab private token not found in environment variables.')
+    sys.exit(1)
+
+# ANSI escape codes for colors
+COLOR_RESET = "\033[0m"
+COLOR_GREEN = "\033[32m"
+COLOR_YELLOW = "\033[33m"
+COLOR_RED = "\033[31m"
+COLOR_BLUE = "\033[34m"
+
+def get_args():
+    parser = argparse.ArgumentParser(description='Verify current deployed Gitlab runners.')
+    parser.add_argument('--gl-server-url', dest='gl_server_url', action='store', required=True, help='Gitlab server url.')
+    parser.add_argument('--gl-runner-version', dest='gl_runner_version', action='store', required=True, help='Gitlab runner version to compare.')
+    parser.add_argument('--delete-offline-runners', dest='delete_offline_runners', action='store_true', help='Delete offline runners that do not match version criteria.')
+    parser.add_argument('--delete-paused-runners', dest='delete_paused_runners', action='store_true', help='Delete paused runners that do not match version criteria.')
+    return parser.parse_args()
+
+def main():
+    args = get_args()
+    gl = gitlab.Gitlab(args.gl_server_url, private_token=gitlab_pat)
+
+    try:
+        runners = gl.runners.all(per_page=1000)
+    except gitlab.exceptions.GitlabGetError as e:
+        logging.error(f'Failed to retrieve runners: {e}')
+        sys.exit(1)
+
+    up_to_date_runners = []
+    outdated_runners = []
+    offline_runners = []
+    paused_runners = []
+
+    for runner in runners:
+        try:
+            runner = gl.runners.get(runner.id)
+            if runner.version == args.gl_runner_version:
+                up_to_date_runners.append(runner)
+            else:
+                outdated_runners.append(runner)
+                if not runner.online:
+                    offline_runners.append(runner)
+                if runner.paused:
+                    paused_runners.append(runner)
+        except gitlab.exceptions.GitlabGetError as e:
+            logging.error(f'Failed to retrieve runner {runner.id}: {e}')
+
+    logging.info(f"Total runners: {len(runners)}")
+    
+    logging.info("Runners that are up to date:")
+    for runner in up_to_date_runners:
+        logging.info(f"{COLOR_GREEN}{runner.description} is online and has the correct version.{COLOR_RESET}")
+
+    logging.info("Runners that must be updated:")
+    for runner in outdated_runners:
+        logging.info(f"{COLOR_YELLOW}Must be updated asap to {args.gl_runner_version}: {runner.description}, Version: {runner.version}, Tags: {runner.tag_list}{COLOR_RESET}")
+
+    if args.delete_offline_runners:
+        logging.info("Deleting offline runners:")
+        for runner in offline_runners:
+            try:
+                logging.info(f"{COLOR_RED}Removing offline runner {runner.description}{COLOR_RESET}")
+                runner.delete()
+            except gitlab.exceptions.GitlabDeleteError as e:
+                logging.error(f'Failed to delete runner {runner.id}: {e}')
+
+    if args.delete_paused_runners:
+        logging.info("Deleting paused runners:")
+        for runner in paused_runners:
+            try:
+                logging.info(f"{COLOR_BLUE}Removing paused runner {runner.description}{COLOR_RESET}")
+                runner.delete()
+            except gitlab.exceptions.GitlabDeleteError as e:
+                logging.error(f'Failed to delete runner {runner.id}: {e}')
+
+if __name__ == '__main__':
+    main()
