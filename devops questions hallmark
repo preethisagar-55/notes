@@ -1,0 +1,100 @@
+please refer to these questions before attending interview with client.
+ 
+            1) How did you reduce the build time from 30 minutes to 10 minutes?
+2) In Terraform, how do you create and manage an S3 bucket at the code level?
+3) Can you explain the Kubernetes architecture and its different components?
+4) How does a Web Application Firewall (WAF) work with Kubernetes?
+5) How do you design and configure a secure VPC, and where do you deploy applications within it?
+6) How do you handle security scanning for Docker images and containers?
+7) How do you scale Kubernetes nodes and pods?
+8) What Integrations have you implemented in Datadog for developers?
+9) What is Real time user monitoring in Datadog?
+10) How do you secure AWS accounts, applications, and databases?
+
+
+
+K8s architecture Aws Waf S3 bucket terraform creation Cicd questions Terraform drift 
+Scenario based 
+What if something is changed in Aws console
+How can terraform know that
+ Multi layer docker file concept Kubernetes autoscaling 
+How will you know when system is down 
+How to troubleshoot it
+ 
+Uppara Hari Preethi Sagar Wed, 18 Mar 2026 11:07:57 GMT
+
+
+Write docker file to deploy war on tomcat 
+Diff between entry point and cmd
+Kubernetes architecture 
+Terraform drift 
+Terraform state lock 
+Concept of autoscaling 
+App is running cpu and memory are normal app is slow how to debug this 
+Splunk functionality
+Uppara Hari Preethi Sagar Wed, 18 Mar 2026 11:09:29 GMT
+
+
+Trragrunt in Terraform
+ECS ; ex2 to ec2 communication
+Datadog all logs to send it to
+EKS : TLS nodegroups, mutual TLS.
+ 
+Gitlab CI : in EKS, update runners, upgrades
+ 
+Mobile project: .com Mac instances in Gitlab runners
+ 
+OSX on windows powershell, python rbash, powershell, chef for windows and Linux
+ 
+Each project : Cron jobs for deployments, datadog agents run on each container
+ 
+SAST/DAST : Gitlab templates for scans
+ 
+Lint Issues
+ 
+Dokcer scan : container scans for gitlab offers
+ 
+AWS : EC2, ECS, lambda, Networking, multiple AWS accounts, transit gateways, VPC 3.0 (secure VPC)
+ 
+Identity AWS account, assume roles from centralize accounts.
+ 
+RDS : in EC2 Mysql, postgres
+ 
+DORA metrics at CI/CD level, drift detection. Metrics don't have false positives.
+ 
+Secretes detections are not there.
+ 
+Incident management : Intial alerts for application logs, trouble shooting deep level ( l3/L4 teams devsecops team)
+ 
+FYI : Work with L3/L4 teams.
+ 
+.com, OCE, musoft or BI
+ 
+Security SAST/DAST what gitlab provides, observability around Datadog.
+ 
+Networking and basic troubleshooting.
+ 
+ECS with fargate, container with same namespace work with praivate network.
+ 
+EKS:
+ 
+EKS rulesets and policies for cluster, roles, security.
+ 
+Helm one for deployments, cron jobs (for heavy work loads),
+ 
+Transit gateways, gitlab runners, datdog, bash and python.
+ 
+How to analyze log patterns and creating alerts.
+ 
+How to configure APM traces in Datadog.
+ 
+Network policies in EKS cluster, node groups and tolerations .
+ 
+Windows powershell
+ 
+Chef cookbooks : Configurations & Recipies
+ 
+EKS/ECS/Terraform/Gitlab questions/Incident management
+
+This is detailed datadog tutorial : https://www.youtube.com/watch?v=VawALrmtWuA&list=PL0xeHY_ImQVVXHAExfdxLdfufEtZs2Ye2
+ 
