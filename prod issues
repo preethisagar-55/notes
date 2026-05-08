@@ -20,6 +20,7 @@ We achieved high availability by running multiple replicas across availability z
 
 
 
+
 High Availability (HA)
 Definition
 
@@ -680,6 +681,786 @@ DNS will be last because DNS failures produce resolution errors, not timeouts.
 
 
 “Pod Security in Kubernetes enforces security policies at the pod and namespace level to prevent containers from running with unsafe privileges. The three Pod Security Standards—Privileged, Baseline, and Restricted—control how tightly workloads are secured.”
+
+-----------------------------------sample jenkins file--------------------------------------------------------------------------
+pipeline {
+	agent any
+	tools {
+		maven "maven 3.6.3"
+		jfrog "jfrogcli"
+	}
+	environment {
+	    SONAR_AUTH_TOKEN = credentials('sonar')
+	    ARTIFACTORY_CREDS_ID='jfrogtoken'
+	    //API_KEY = credentials('jfrogAPI')
+	    REPO_NAME = 'dockerdemo'
+	    ARTIFACT_PATH = 'docker-demo/samplewebapp'
+	    ARTIFACT_FILE = 'samplewebapp'
+	    //env.USERNAME = 'USERNAME'
+	    //env.PASSWORD = 'PASSWORD'
+	    ARTIFACTORY_URL = 'https://preethisagar114376.jfrog.io'
+	    DOCKER_IMAGE_NAME= 'preethisagar114376.jfrog.io/docker-demo/samplewebapp:${BUILD_NUMBER}'
+	    DOCKER_TAG = 'latest'
+	    DOCKER_REPO = 'dockerdemo' 
+        }
+	stages {
+		stage('checkout') {
+			steps {
+                                timeout(time:10,unit:'MINUTES'){
+				git branch: 'master', credentialsId: 'git', url: 'https://github.com/preethisagar-55/CI-CD-using-Docker.git'
+				}
+                           }
+		}
+
+		stage('Execute Maven') {
+			steps {
+
+				sh 'mvn package'
+			}
+		}
+		//stage('upload maven artifact to jfrog') {
+	                 //steps {
+			   //rtUpload(
+			     //serverId: "artifactory",
+			     //spec: '''{
+	                       //"files": [
+			         //{
+	                           //"pattern": "*.war",
+			           //"target" : "maven-demo/"
+	                         //}
+			       //]
+	                      //}''',
+			     //)
+			   //}
+			 //}
+		//stage('Push artifacts into artifactory') {
+                         //steps {
+                                 //sh 'curl -fL https://getcli.jfrog.io | sh'
+				 //sh 'echo ${ARTIFACTORY_ACCESS_TOKEN}'
+                                 //sh './jfrog rt u --url ${JFROG_CLI_BUILD_URL} --access-token ${ARTIFACTORY_ACCESS_TOKEN} ./*.jar  maven-demo/'
+                                 //jf 'rt build-publish'
+                                 //  sh  './jfrog rt bp  --url https://preethisagar114376.jfrog.io/artifactory --access-token ${ARTIFACTORY_ACCESS_TOKEN} ${JOB_NAME} ${BUILD_NUMBER}'
+                                //}
+                             //}
+		//stage('Static Code Analysis') {
+		       //environment {
+		             //SONAR_URL = "http://3.109.212.222:9000"
+		        //}
+		           //steps {
+		                 //withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_AUTH_TOKEN')]) {
+		                 //sh 'mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+		              //}
+		          //}
+		      //}
+
+	          stage('Docker Build and Tag') {
+		            steps {
+			          //sh 'docker build -t preethisagar114376.jfrog.io/docker-demo/samplewebapp:${BUILD_NUMBER} --pull=true .'
+				  //sh 'docker images'
+				  //sh 'docker tag samplewebapp docker-demo/samplewebapp:latest'
+				  //sh 'docker tag samplewebapp docker-demo/samplewebapp:$BUILD_NUMBER'
+			          sh 'docker tag samplewebapp haripreethisagar/ciproject:latest'
+			          sh 'docker tag samplewebapp haripreethisagar/ciproject:$BUILD_NUMBER'
+				  sh 'docker build -t samplewebapp haripreethisagar/ciproject:$BUILD_NUMBER .'
+			    }
+                             }
+	                   }
+		//stage('Trivy Scan') {
+			 //steps {
+				 //sh 'trivy image haripreethisagar/ciproject:$BUILD_NUMBER  --output report.html || true'
+		                   //sh 'trivy -h'
+                                   //sh 'mkdir -p reports'
+                                   //sh 'sudo apt-get -y install tree'
+                                   //sh 'trivy image $DOCKER_IMAGE_NAME  --output report.html || true'
+                                   //sh 'tree'
+                                   //sh 'ls -lrth'
+			 //}
+		     //}
+
+                stage('Publish image to Docker Hub') {
+                          steps {
+                                    withDockerRegistry([ credentialsId: "docker", url: "" ]) {
+                                    sh  'docker push haripreethisagar/ciproject:latest'
+                                    sh  'docker push haripreethisagar/ciproject:$BUILD_NUMBER' 
+                                }
+                             }
+		       }  
+		  //stage('push image to jfrog artifactory'){
+			  //steps {
+			     //script {
+				       //sh 'docker login ${ARTIFACTORY_URL} -u admin -p ${ARTIFACTORY_CREDS_ID}'
+				       //sh 'docker tag samplewebapp preethisagar114376.jfrog.io/docker-demo/samplewebapp:latest' 
+				       //sh 'docker push https://preethisagar114376.jfrog.io/docker-demo/samplewebapp:$BUILD_NUMBER'
+			     //}
+			  //}
+		  //}
+                 //stage('Push Image to Artifactory') {
+	                 //steps {
+			   //rtDockerPush(
+			     //serverId: "artifactory",
+			     //image: "preethisagar114376.jfrog.io/docker-demo/samplewebapp:${BUILD_NUMBER}",
+			     //targetRepo: 'docker-demo')
+			 //}
+	                //}
+			 //}
+		   //stage('publish build info'){
+		         //steps{
+		            //rtPublishBuildInfo(
+			        //serverId: "artifactory"
+			//)
+		     //}
+		   //}
+																									  
+					//}
+				      //}
+				   //}
+				//}
+			     //}
+
+                   stage('Run Docker container on Jenkins Agent') {
+                         steps{
+                                sh "docker run -d -p 8003:8080 samplewebapp:${BUILD_NUMBER}"
+
+                                }
+                              }
+//stage('Run Docker container on remote hosts') {
+
+//steps {
+//sh "docker -H ssh://jenkins@172.31.28.25 run -d -p 8003:8080 nikhilnidhi/samplewebapp"
+
+// }
+//}
+// }
+//}
+}
+
+
+
+-------------------------------------------------------notes------------------------------------------------------
+“To reduce build time from 30 to 10 minutes, I’d first profile the pipeline to identify bottlenecks. Then I’d implement dependency caching, optimize Docker layers, parallelize independent stages, and eliminate unnecessary steps. Finally, I’d tune CI resources and reuse artifacts where possible. These combined optimizations typically bring significant reductions without impacting build reliability.”
+
+In multi-stage builds, the first stage is used to compile or build the application and install dependencies. The final stage is a minimal runtime image where only the required artifacts are copied using COPY --from, which reduces image size and improves security.
+
+
+waf 2 types one ias aws af attached to alb
+
+other is k8s waf called modsecurity waf
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app-service
+            port:
+              number: 80
+
+
+“WAF itself is not a Kubernetes object. If it’s a cloud-managed WAF like AWS WAF, it’s configured outside Kubernetes and attached to the load balancer created by the Ingress. If it’s an in-cluster WAF like ModSecurity, it’s enabled through annotations in the Ingress YAML.”
+
+
+WAF is attached to the ALB
+
+ALB is created by Kubernetes Ingress
+
+WAF configuration is NOT in Ingress YAML
+
+Flow
+Client → AWS WAF → ALB → Ingress → Service → Pod
+
+WAF stands for Web Application Firewall. It’s a security layer that sits in front of your web applications and filters, monitors, and blocks malicious HTTP/S traffic before it reaches your servers.
+
+🔹 What WAF Does
+Protects against common attacks:
+
+SQL injection
+
+Cross‑site scripting (XSS)
+
+Cross‑site request forgery (CSRF)
+
+File inclusion attacks
+
+
+
+
+Code Commit
+ → Build Docker Image
+ → Scan Image (Trivy)
+ → Push to Registry
+ → Registry Scan
+ → Admission Controller Check
+ → Deploy to Kubernetes
+ → Runtime Monitoring
+One-paragraph interview answer (memorize)
+“I handle container security by scanning Docker images during CI using tools like Trivy, enforcing secure Dockerfile practices, and failing builds on high or critical CVEs. Images are also scanned in the registry for newly discovered vulnerabilities. In Kubernetes, I use admission controllers to prevent vulnerable images from being deployed and runtime security tools like sysdig to detect suspicious behavior. This layered approach ensures security across build time, deploy time, and runtime.”
+
+🔹 CVE
+
+Common Vulnerabilities and Exposures  and 
+🔹 CVSS
+
+Common Vulnerability Scoring System
+CVE tells you what the vulnerability is, CVSS tells you how severe it is.
+
+datadog apm application performance monitoring
+
+“I integrated Datadog APM, logs, and Kubernetes monitoring to give developers full visibility into application performance and runtime behavior. We enabled log–trace correlation, Kubernetes pod metrics, and AWS service monitoring so developers could debug issues without infrastructure access. I also integrated CI/CD pipelines and Slack alerts, and built service-level dashboards focused on latency, errors, and resource usage. These integrations significantly reduced debugging time and improved developer productivity.”
+
+
+
+Pillar	Purpose
+Metrics	What is happening
+Logs	Why it happened
+Traces	Where time is spent
+
+
+“My hands-on experience with Datadog was primarily Kubernetes-focused. I integrated Datadog Agent as a DaemonSet to collect node, pod, and container metrics, and enabled log collection from Kubernetes workloads. I created monitors for pod restarts, resource utilization, and node health, and built dashboards for cluster and namespace visibility. While I didn’t implement application-level APM or cloud service integrations, I understand how Datadog extends into those areas.”
+
+
+“I primarily implemented Datadog integrations focused on improving developer visibility into Kubernetes workloads. We deployed the Datadog Agent as a DaemonSet to integrate with Kubernetes and enabled container-level and pod-level metrics, along with log collection from application pods. This allowed developers to view application logs enriched with Kubernetes metadata like namespace, pod, and container details directly in Datadog, without accessing the cluster.”
+
+“In addition, I configured Datadog monitors and dashboards that developers actively used, such as pod restarts, resource utilization, and error trends, which helped them quickly identify application stability issues. While I did not directly implement application-level APM instrumentation or cloud service integrations myself, I understand how Datadog APM, log-trace correlation, and CI/CD visibility integrate to give developers end-to-end observability.”
+
+“Overall, the Datadog integrations I worked on helped developers troubleshoot issues faster by correlating Kubernetes metrics and logs in a single platform.”
+
+
+
+“Application-level APM and cloud integrations were handled by other teams, but I collaborated closely with them and understand the end-to-end flow.”
+
+
+
+I secure AWS environments using a layered approach. At the account level, I enforce MFA, least-privilege IAM roles, SCPs, and centralized logging with CloudTrail and GuardDuty. At the network level, I isolate workloads using VPCs, private subnets, and security groups. Applications are protected using WAF, secure secret management, and container security practices. Databases are secured with encryption, private access, and automated backups. Finally, continuous monitoring and alerting ensure threats are detected and responded to quickly.”
+
+Guardrails & governance
+------------------------
+Service Control Policies (SCPs) to restrict dangerous actions
+
+Block:
+
+Disabling CloudTrail
+
+Creating public S3 buckets
+
+Use AWS Config for compliance tracking
+
+
+
+nodegroup = ec2 worker nodes pool for eks.
+
+fargate -> aws managed serverless compute not worker node here pods run without exposing nodes.
+
+ec2 mode: pods-->worker nodes ec2 --> ypu manage nodes 
+
+
+
+Frgate mode -> pods->fargate-> aws manages everything.    fargate profiles
+
+use fargate for small workloads 
+
+use ec2 nodes for large microservices..
+
+
+
+
+kubectl taint nodes gpu-node gpu=true:NoSchedule
+This taint says: “Don’t schedule pods here unless they tolerate gpu=true.”
+
+
+ Tolerations are applied to pods to allow scheduling onto tainted nodes.
+
+Effect: A pod with a toleration can run on nodes with matching taints.
+
+
+tolerations:
+- key: "gpu"
+  operator: "Equal"
+  value: "true"
+  effect: "NoSchedule"
+
+
+In EKS, we use node groups to separate workloads — for example, GPU nodes for ML, spot nodes for batch jobs, and on‑demand nodes for critical services. Taints isolate these nodes, and tolerations on pods allow only the right workloads to be scheduled there. This ensures workload isolation, cost efficiency, and reliability."
+
+
+
+
+
+🔹 Tools in Practice
+Istio: Auto mTLS, Envoy sidecars, Citadel for certs.
+
+Linkerd: Lightweight proxy, automatic mTLS, identity service for certs.
+
+AWS EKS: Provides the Kubernetes environment; mesh handles mTLS.
+
+✅ Interview line:  
+"From a production reliability perspective, we enabled mutual TLS in EKS using Istio. Each pod had a sidecar proxy that handled TLS handshakes and certificate rotation automatically. This ensured all service-to-service traffic was encrypted and mutually authenticated, aligning with zero-trust principles
+
+
+in k8s (Mutual TLS in Vanilla Kubernetes)
+No built‑in mTLS: Kubernetes by itself does not enforce mTLS between pods.
+
+Service Mesh Required: You typically deploy Istio, Linkerd, or Consul to enable mTLS.
+
+How it works:
+
+Sidecar proxies (Envoy in Istio, Linkerd proxy in Linkerd) are injected into pods.
+
+Control plane issues X.509 certificates to each proxy, signed by a mesh CA.
+
+When Service A calls Service B, both proxies perform a TLS handshake.
+
+Each side presents its certificate → both are validated against the CA.
+
+Once authenticated, traffic is encrypted end‑to‑end.
+
+
+ALB + Ingress: Handles external traffic into the cluster.
+
+Service-to-Service Communication (with mTLS): Handles internal traffic between microservices.
+
+
+"From a production reliability perspective, ALB with Ingress exposes the cluster to external users, but microservices must also communicate internally. That’s why we enable service-to-service communication with mTLS via a service mesh — ensuring encrypted, authenticated, and observable traffic between services."
+
+EKS uses a Container Network Interface (CNI) plugin to implement networking.
+
+Popular CNIs that support Network Policies:
+
+Calico → full network policy enforcement, advanced features.
+
+Cilium → eBPF‑based, high performance, supports network policies and observability.
+
+The CNI enforces the rules defined in your NetworkPolicy YAML.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+
+
+"In EKS, we enforce zero trust networking using Kubernetes Network Policies. With a CNI like Calico or Cilium, we can restrict pod‑to‑pod communication so only explicitly allowed services talk to each other. This prevents unauthorized lateral movement and aligns with zero trust principles."
+
+
+
+From a production reliability perspective, we secure EKS clusters by enforcing IRSA for least‑privilege IAM, applying Pod Security Standards to block unsafe workloads, restricting RBAC to avoid over‑privileged users, exposing the API only via private endpoints, and enabling audit logs for full visibility and compliance."
+
+
+We deployed GitLab runners in EKS using the Kubernetes executor. Jobs run in isolated pods, scaling automatically, with namespace isolation for security."
+
+We upgrade GitLab runners via Helm with rolling updates, pin versions to avoid surprises, and use canary runners plus backward compatibility testing to ensure safe upgrades."
+
+
+We use GitLab scheduled pipelines for routine CI/CD tasks, Kubernetes CronJobs for heavy workloads, and schedule off‑peak deployments to reduce user impact."
+
+GitLab Runners in EKS: Kubernetes executor, auto‑scaling, namespace isolation.
+
+Upgrading Runners: Helm rolling updates, version pinning, canary rollout, backward compatibility testing.
+
+Cron Jobs: Scheduled pipelines for CI/CD, Kubernetes CronJobs for batch workloads, off‑peak deployments for reliability.
+
+⚖️ Summary
+Mac runners are required for iOS builds due to Xcode and Apple licensing.
+
+Managed via dedicated macOS instances, auto‑registered with GitLab.
+
+Credentials (certs, profiles) must be handled securely.
+
+Cost optimization: Use macOS runners only when necessary, offload other jobs to Linux runners.
+
+✅ Interview line:  
+"For mobile projects, we use macOS GitLab runners because iOS builds require Xcode and Apple mandates Apple hardware. These runners are managed on dedicated Mac instances, auto‑registered with GitLab, and secured for handling signing credentials. Since they’re expensive, we only use them for iOS build/test jobs, while other stages run on Linux runners."
+
+
+"We run the Datadog Agent as a DaemonSet in EKS, which collects all container stdout/stderr and application logs, then ships them to Datadog."
+
+
+
+Q: Datadog agent per container?
+Answer:
+
+No — you don’t run one agent per container.
+
+Instead, one agent per node collects logs from all containers running on that node.
+
+This reduces overhead and simplifies management.
+
+
+Q: How do you analyze log patterns?
+Answer:
+
+Log pipelines: Define how logs are parsed and enriched.
+
+Grok parsing: Extract fields from raw logs (e.g., request IDs, error codes).
+
+Facets & tags: Add metadata (service name, environment, region).
+
+Detect patterns such as:
+
+Error spikes (sudden increase in 500s).
+
+Latency patterns (slow responses).
+
+Auth failures (login errors, 401s).
+
+👉 Interview line:  
+"We use Datadog log pipelines with Grok parsing to extract key fields, then analyze facets and tags to detect spikes in errors, latency, or authentication failures."
+
+"We enabled Datadog APM by instrumenting our apps with language‑specific libraries. This gave us service maps and distributed traces to identify bottlenecks across microservices."
+
+
+Logs: Collected via Datadog Agent (DaemonSet in EKS).
+
+Agent: One per node, not per container.
+
+Analysis: Pipelines, Grok parsing, facets/tags → detect error/latency/auth issues.
+
+Alerts: Log‑based, metric‑based, composite → tuned to reduce noise.
+
+APM: Tracing libraries → service maps + distributed tracing.
+
+✅ These answers are concise, technical, and interview‑ready.
+
+Would you like me to also prepare a real‑world scenario answer (e.g., “During a latency spike, we used Datadog APM traces to identify a slow database query and fixed it”) so you can demonstrate practical experience in interviews?
+
+
+🔹 What Secrets Detection Means
+Secrets detection is about finding sensitive information accidentally committed into source code or repos, such as:
+
+API keys
+
+Database passwords
+
+Cloud provider credentials (AWS, GCP, Azure)
+
+Private tokens
+
+These are dangerous because if they leak into Git, attackers can exploit them even if your code is otherwise secure.
+
+🔹 Tools for Secrets Detection
+GitLab Secret Detection Templates
+
+GitLab CI/CD has built‑in jobs that scan repos for secrets.
+
+They look for patterns like AWS keys (AKIA...) or private tokens.
+
+
+
+In a multi‑account AWS architecture, we secure accounts by centralizing identity in a dedicated identity account, using the AssumeRole pattern for cross‑account access, and enforcing Service Control Policies via AWS Organizations. This ensures least privilege, compliance, and isolation of workloads, reducing the blast radius of any compromise."
+
+
+
+Service Control Policies (SCPs) via AWS Organizations
+AWS Organizations lets you group accounts into Organizational Units (OUs).
+
+
+blast radius Meaning: The scope of impact if something goes wrong — how far the “damage” spreads.
+
+Single AWS Account:
+
+If all workloads (prod, dev, test) are in one account, a compromised IAM user could affect everything.
+
+👉 Large blast radius.
+
+Multiple AWS Accounts:
+
+If prod and dev are isolated in separate accounts, a compromise in dev doesn’t affect prod.
+
+👉 Smaller blast radius.
+
+Kubernetes/EKS:
+
+If all workloads run in one namespace, a misconfigured RBAC role could expose all pods.
+
+If workloads are isolated by namespace + network policies, the blast radius is reduced.
+
+Isolation: Separate accounts, VPCs, namespaces, or node groups.
+
+Least Privilege: IAM roles, RBAC, network policies.
+
+Segmentation: Use service mesh policies, SCPs, firewalls.
+
+Monitoring: Detect issues early before they spread.
+
+
+
+
+A managed AWS service that acts as a central hub for connecting multiple VPCs and on‑premises networks.
+
+
+Transit Gateway (TGW)
+Hub‑and‑spoke model: One central TGW connects to many VPCs.
+
+Supports transitive routing: VPC‑A → TGW → VPC‑B → VPC‑C is possible.
+
+Scales better: Thousands of VPCs can connect via TGW.
+
+Centralized control: Route tables managed at TGW level.
+
+Hybrid connectivity: Can also connect on‑prem networks via VPN/Direct Connect.
+
+👉 Designed for large multi‑account, multi‑VPC architectures.
+
+
+A Secure VPC (VPC 3.0) design means workloads run only in private subnets with no public EC2 exposure. Outbound traffic is controlled via NAT gateways and VPC endpoints, while inbound traffic comes through managed entry points like ALBs or VPN. Flow logs are enabled for full visibility, and security groups/NACLs enforce least privilege. This reduces the attack surface and ensures compliance with zero‑trust networking principles."
+
+
+
+"Running MySQL/Postgres on EC2 gives full control but comes with concerns: backups are manual, patching is your responsibility, and HA requires custom replication setups. The migration path to RDS is recommended because RDS automates backups, patching, monitoring, and provides Multi‑AZ high availability. Tools like AWS DMS make migration straightforward."
+
+
+We handle incidents by starting with alerts from Datadog, triaging severity, and investigating using logs, metrics, and traces. We identify the blast radius to understand scope, then mitigate quickly via rollback or config changes. Finally, we conduct a Root Cause Analysis to document the incident and implement preventive measures."
+
+
+🔹 Incident Management Levels
+L1 – First Line (Frontline / Helpdesk)
+Scope: Basic triage and user‑facing support.
+
+Responsibilities:
+
+Acknowledge alerts or tickets.
+
+Perform initial troubleshooting (restart service, check logs).
+
+Escalate if issue is complex.
+
+Example: User reports login issue → L1 checks if service is up, verifies credentials, escalates if deeper.
+
+L2 – Intermediate Support
+Scope: Handles more technical issues beyond L1.
+
+Responsibilities:
+
+Deeper investigation into application/service behavior.
+
+Use monitoring tools (Datadog, CloudWatch, Prometheus).
+
+Apply known fixes or patches.
+
+Escalate to L3 if root cause is complex.
+
+Example: Service latency → L2 checks metrics, identifies DB queries slowing down, applies temporary fix.
+
+L3 – Expert / Engineering
+Scope: Deep application and infrastructure troubleshooting.
+
+Responsibilities:
+
+Debug code, infrastructure, or configuration issues.
+
+Perform rollbacks, hotfixes, or infra changes.
+
+Work closely with developers and SREs.
+
+Example: Memory leak in microservice → L3 engineers patch code, redeploy service, stabilize infra.
+
+L4 – Architecture / Systemic Fixes
+Scope: Long‑term, systemic improvements.
+
+Responsibilities:
+
+Root Cause Analysis (RCA) and architectural redesign.
+
+Implement systemic fixes (e.g., redesign failover, improve CI/CD, add observability).
+
+Prevent recurrence of incidents.
+
+Example: Repeated outages due to single‑AZ dependency → L4 redesigns architecture for multi‑AZ resilience
+
+
+
+Found DB connection pool misconfigured → increased max connections.
+
+Rolled out fix via Helm chart update.
+
+Validated with traces that latency dropped back to normal.
+
+Documented RCA: misconfigured DB pool + insufficient monitoring on DB connections.
+
+In deep troubleshooting, I start with app logs, then follow traces to pinpoint latency, check DB health, validate network paths, and correlate ECS/EKS metrics. I also confirm IAM and security group rules. This layered approach helps isolate root cause — whether it’s application code, infra bottleneck, or misconfiguration — and ensures a precise fix."
+
+
+We track the four DORA metrics: deployment frequency, lead time for changes, mean time to restore, and change failure rate. Together, they measure both speed and stability of delivery. High‑performing teams deploy frequently with short lead times, recover quickly from incidents, and keep change failure rates low."
+
+
+
+We avoid false positives by filtering infra‑only changes, ignoring transient retries, and correlating alerts with real incidents. We also tune thresholds, use composite monitors, and focus on user impact rather than raw metrics. This ensures alerts are actionable and reduces noise for the on‑call team."
+
+
+Filter Infra‑Only Changes
+
+Not every infrastructure change should trigger an alert.
+
+Example: Scaling up/down EC2 or EKS nodes is expected behavior.
+
+Solution: Tune monitors to ignore routine infra events (autoscaling, deployments) unless they cause service impact.
+
+Ignore Retries / Transient Failures
+
+Distributed systems often retry failed requests automatically.
+
+Example: A single 500 error followed by a successful retry shouldn’t trigger a SEV‑1 alert.
+
+Solution: Use thresholds (e.g., error rate > 5% over 5 minutes) instead of single events.
+
+Helps distinguish noise from real incidents.
+
+------------------------------------------------------github actions-----------------------------------------------------------------
+gh-first-action/.github/workflows/first-action.yaml
+
+
+name: First-workflow
+on: workflow_dispatch
+jobs: 
+  first-job: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: print greeting
+        run: echo "Hello World"
+      - name: Print goodbye
+        run: echo "Done-bye!"
+
+If you need to run multiple shell commands (or multi-line commands, e.g., for readability), you can easily do so by adding the pipe symbol (|) as a value after the run: key.
+
+Like this:
+
+...
+run: |
+    echo "First output"
+    echo "Second output"
+
+
+git remote add origin https://jdjshjsd.git
+
+git push
+
+git push --set--upstream origin main
+
+git remote set-url origin https://hsjhgjdhs.git
+
+git push --set-upstream origin main
+
+
+
+
+7️⃣ Simple decision rule (remember this)
+
+👉 Use GitHub Actions when:
+
+Code is in GitHub
+
+You need CI + basic CD
+
+Team wants simplicity
+
+👉 Use Azure DevOps when:
+
+You want everything in one place
+
+Strong approvals & enterprise controls
+
+Microsoft ecosystem
+
+👉 Use Harness when:
+
+Production stability matters most
+
+You need safe rollouts + auto rollback
+
+Large Kubernetes environments
+
+
+
+
+-----------------------------------------------------python codes----------------------------------------------------------------------------
+def first_non_repeating(s):
+    freq = {}
+    for ch in s:
+        freq[ch] = freq.get(ch, 0) + 1
+
+    for ch in s:
+        if freq[ch] == 1:
+            return ch
+    return None
+
+
+# Function calling
+print(first_non_repeating("devopsengineer"))
+
+output d
+
+
+
+def first_non_repeating(s):
+    freq = {}
+    for ch in s:
+      if ch in freq:
+       freq[ch] += 1
+      else:
+       freq[ch] = 1
+    for ch in s:
+        if freq[ch] == 1:
+            return ch
+    return None
+
+
+# Function calling
+print(first_non_repeating("devopsengineer"))
+
+
+def is_palindrome(s):
+    return s == s[::-1]
+
+
+# Function calling
+print(is_palindrome("madam"))
+
+oytptu true
+
+
+
+
+def remove_duplicates(s):
+    seen = set()
+    result = ""
+    for ch in s:
+        if ch not in seen:
+            seen.add(ch)
+            result += ch
+    return result
+    
+print(remove_duplicates("mam"))
+
+output: ma
+
+
+def second_largest(arr):
+    arr=list(set(arr))
+    arr.sort()
+    return arr[-2]
+print(second_largest([1,2,3,55,68]))
+
+
 
 
 
