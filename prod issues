@@ -1,0 +1,687 @@
+prep notes
+-------------------------
+Route 53 is a highly available DNS service that resolves domains, routes traffic globally, and provides DNS-level failover.
+
+
+# Stress 4 CPU cores for 60 seconds
+stress --cpu 4 --timeout 60
+
+
+
+Resilience vs Reliability
+Term	Meaning
+Reliability	System works correctly under normal conditions
+Resilience	System recovers quickly from failures
+
+👉 A reliable system can still fail badly if it’s not resilient.
+
+
+We achieved high availability by running multiple replicas across availability zones, using load balancers and Kubernetes health checks. Failed pods were automatically replaced without customer impact.
+
+
+
+High Availability (HA)
+Definition
+
+Ensuring the system remains accessible despite failures.
+
+
+SLI = What we measure
+SLO = What we aim for
+SLA = What we promise
+
+
+Real Example
+
+SLI: Actual uptime = 99.92%
+
+SLO: Target uptime = 99.9%
+
+SLA: Promised uptime = 99.5%
+
+
+
+
+What is Error Budget?
+
+The amount of failure you are allowed.
+
+Example
+
+SLO = 99.9% uptime/month
+
+Allowed downtime ≈ 43 minutes/month
+
+That 43 minutes = error budget
+
+Why It’s Useful
+
+Encourages safe releases
+
+Balances speed vs stability
+
+
+
+
+10. Simple Example Using Kubernetes (Very Interview Friendly)
+
+SLI: 95% of API requests < 300ms
+
+SLO: Maintain this for 99.9% of the month
+
+SLA: 99.5% uptime guaranteed to customers
+
+Monitoring via:
+
+Grafana (metrics)
+
+New Relic / Dynatrace (APM)
+
+Alerts when SLO is violated
+
+
+
+
+
+
+Use phrases like:
+
+“From a production reliability perspective…”
+
+“We monitored SLIs like latency and error rate…”
+
+“Our goal was to stay within SLOs to avoid SLA impact…”
+
+
+
+Fault Tolerance
+Definition
+
+System continues functioning even when components fail.
+
+resilience testing
+Testing how the system behaves under failure conditions.
+
+
+
+3. Chaos Engineering (Interview Favorite 🔥)
+Definition
+
+Controlled experiments that inject failures to build confidence in system behavior.
+
+Principles
+
+Define steady state (metrics)
+
+Inject failure
+
+Observe impact
+
+Improve system
+
+Kubernetes Chaos Examples
+
+Kill random pods
+
+Add network latency
+
+Block DNS
+
+Throttle CPU/memory
+
+Real-World Example Answer
+
+We used chaos engineering to validate our system’s behavior during pod and node failures. This helped uncover missing timeouts and misconfigured readiness probes.
+
+
+
+
+Use the Golden Signals:
+
+1. Latency
+
+How slow is the service?
+
+2. Error Rate
+
+How many requests fail?
+
+3. Traffic
+
+How much load?
+
+4. Saturation
+
+How close to limits (CPU/memory)?
+
+Bad Alert ❌
+
+CPU is 70%
+
+Good Alert ✅
+
+Error rate > 2% for 5 minutes
+
+Question	Tool
+Is system healthy?	Metrics
+What error happened?	Logs
+Where is it slow?	Traces
+
+Perfect interview line:
+
+We use metrics for system health, promethus and grafana dashboard and  logs for details, and traces to pinpoint latency(dynatrace and new relic)issues.
+
+
+. How to Explain This Cleanly in Interviews (Memorize This)
+
+Error rate is calculated by dividing the number of failed requests by total requests over a defined time window. We monitor the raw error rate and trigger alerts when it exceeds defined thresholds or breaches SLOs, ensuring alerts are actionable and user-impact focused.
+
+This answer is perfect.
+
+
+During a canary deployment, we monitored error rate for the new version. When it crossed 1% for 5 minutes, we rolled back automatically to avoid impacting users.
+
+
+
+
+
+
+
+
+
+
+
+
+ 'Permission Denied' error in Docker:
+
+-> After an upgrade, sometimes we got the permission denied error. 
+Despite following all the post-install steps, including confirming that user was part of the Docker group, nothing seemed to work. 
+
+That time we have to check the permission of the the path (/var/run/docker.sock) and need to fix it.
+
+sudo chmod 666 /var/run/docker.sock
+
+-> If creating a docker group and adding your user to it doesn't work, then this one will be the second alternative:
+
+sudo chown $USER /var/run/docker.sock 
+
+
+#Docker #DevOps #Troubleshooting #PermissionDenied #AWS #Kubernetes #Automation
+
+Ankit K.
+Ankit K.View Ankit K.’s profile 
+• 3rd+
+
+-----------------------------------prod issues-------------------------------------------
+Real Problem
+
+Yesterday code worked.
+Today production broke.
+
+Repo has 500 commits 🤯
+You don’t know which one caused it.
+
+git bisect will find it in ~9–10 steps instead of 500.
+
+
+Step 1 — Start bisect
+git bisect start
+Step 2 — Mark current commit as bad
+git bisect bad
+
+(You are currently seeing the bug)
+
+Step 3 — Mark an old working commit as good
+git bisect good <commit-id>
+
+Now Git jumps to the middle commit automatically.
+
+Step 4 — Test the code
+
+Run app/tests:
+
+If bug exists:
+
+git bisect bad
+
+If bug not exists:
+
+git bisect good
+
+Repeat…
+
+Final Result
+
+Git prints:
+
+abc1234 is the first bad commit
+
+🎯 You found the exact commit that broke production.
+
+Finish
+git bisect reset
+
+Returns to original branch.
+
+DevOps Real Example
+
+Deployment failed after last release.
+
+You can quickly find:
+
+Which merge request broke build
+
+Which config change caused outage
+
+Which commit introduced memory leak
+
+Interview One-Line Answer
+
+git bisect is used to identify the commit that introduced a bug by performing a binary search between a known good and bad commit.
+
+----------------------------------------------
+
+
+ok now issue is pod is launched but its not running properly
+its up intermittently and down
+
+ok
+
+whats the issue how to debug its an interview question by cloud raptor
+
+
+Nice — this is a classic real SRE troubleshooting scenario question.
+They are not testing Kubernetes commands… they are testing your thinking order.
+
+Pod is created but goes UP and DOWN intermittently
+
+This usually means CrashLoopBackOff / failing health checks / resource issue / dependency issue
+
+You must answer in a structured debug flow 👇
+
+🧠 Golden Rule (Say this first in interview)
+
+I will debug from Kubernetes → Container → Application → Dependency → Infrastructure
+
+Interviewers LOVE this line.
+
+Step-by-Step Debugging Flow
+1️⃣ Check Pod Status
+
+First understand how it is failing.
+
+kubectl get pods -n <ns> -o wide
+kubectl describe pod <pod>
+
+Look for:
+
+Field	Meaning
+CrashLoopBackOff	App crashing
+OOMKilled	Memory issue
+Error	Container exit
+Running but restarting	Health probe failing
+2️⃣ Check Events (MOST IMPORTANT)
+
+In describe output scroll to bottom:
+
+Events:
+Back-off restarting failed container
+Readiness probe failed
+Liveness probe failed
+OOMKilled
+ImagePullBackOff
+
+This alone often answers the question.
+
+3️⃣ Check Logs
+
+Current container logs:
+
+kubectl logs <pod>
+
+Previous crash logs:
+
+kubectl logs <pod> --previous
+
+💡 Interview tip:
+
+For intermittent pods, --previous is critical because container already restarted.
+
+4️⃣ Health Probe Issues (Very Common)
+
+If pod alternates UP/DOWN → usually liveness probe killing it.
+
+Check:
+
+kubectl describe pod <pod> | grep -A5 Liveness
+
+Typical problems:
+
+Wrong path /health
+
+App slow startup
+
+Port mismatch
+
+DB dependency not ready
+
+Fix:
+Increase:
+
+initialDelaySeconds
+timeoutSeconds
+failureThreshold
+5️⃣ Resource Issues
+
+Check if node killing container:
+
+kubectl top pod
+kubectl describe pod | grep -i oom
+
+If OOMKilled:
+
+memory limit too low or memory leak
+
+6️⃣ Exec Into Pod (If running briefly)
+kubectl exec -it <pod> -- sh
+
+Check:
+
+config files
+
+env variables
+
+DNS resolution
+
+service connectivity
+
+Example:
+
+curl db-service
+nslookup redis
+7️⃣ Dependency Failures
+
+Very common real issue:
+
+Pod starts → tries DB → fails → exits → restart → works → fails again
+
+Check service:
+
+kubectl get svc
+kubectl get endpoints
+8️⃣ Node Issues
+
+Sometimes pod fine but node problem:
+
+kubectl describe node <node>
+
+Look for:
+
+memory pressure
+
+disk pressure
+
+network plugin issues
+
+Most Common Root Causes (Mention These)
+
+Liveness probe killing slow app
+
+DB/Redis dependency not reachable
+
+OOMKilled due to wrong limits
+
+ConfigMap/Secret missing
+
+Wrong environment variables
+
+Port mismatch
+
+Application crash
+
+Perfect Interview Answer (Say this)
+
+Since the pod is intermittently going down, I suspect CrashLoopBackOff or failing liveness probe. I will first check pod events using describe, then check previous container logs, verify health probes, inspect resource limits for OOMKilled, and finally validate dependencies like DB or services connectivity from inside the container.
+
+
+no thing is
+we have many no of pods
+like multiple pods we cant chekc each and every pod right
+
+how?
+
+Excellent — now you’re thinking like an SRE 👌
+Yes, interviewer expects this follow-up.
+
+“You have 200 pods… you won’t debug one-by-one. So how do you quickly identify the bad ones?”
+
+They want filtering + pattern detection.
+
+Step 1 — Find Only Problematic Pods (Don’t Check All)
+Show only failing pods
+kubectl get pods -n <ns> | grep -v Running
+
+OR better:
+
+kubectl get pods -n <ns> --field-selector=status.phase!=Running
+
+Now you reduced 200 → maybe 5 pods.
+
+Find restarting pods (VERY IMPORTANT)
+kubectl get pods -n <ns> --sort-by=.status.containerStatuses[0].restartCount
+
+Highest restart count = real problem pod 🔥
+
+Step 2 — Group Debugging Instead of One-by-One
+
+Usually pods belong to same deployment.
+
+Get owner:
+
+kubectl get pod <pod> -o jsonpath='{.metadata.ownerReferences[0].name}'
+
+Then check deployment:
+
+kubectl describe deploy <deployment>
+kubectl rollout status deploy <deployment>
+
+If multiple pods failing → issue is application/config, not pod.
+
+Step 3 — Check Events for Whole Namespace (Power Move)
+
+Instead of per-pod:
+
+kubectl get events -n <ns> --sort-by=.lastTimestamp
+
+You instantly see pattern:
+
+Readiness probe failed
+Readiness probe failed
+Readiness probe failed
+
+Boom → probe issue.
+
+Step 4 — Check Logs for ALL Pods Together
+kubectl logs -l app=myapp -n <ns> --tail=50
+
+Now you read logs of every replica at once.
+
+Step 5 — Metrics Based Detection (Very Senior Answer)
+
+Instead of kubectl:
+
+In Prometheus/Grafana check:
+
+container restarts
+
+OOM kills
+
+error rate
+
+latency spike
+
+You don’t even SSH or kubectl first.
+
+Perfect Interview Answer (Memorize This)
+
+In large environments I won’t debug pod by pod. First I filter non-running or high-restart pods, then check namespace events to identify patterns, then inspect the deployment and aggregated logs. Usually if multiple replicas fail, it indicates configuration or dependency issue rather than individual pod failure.
+
+One-Line Senior Version 😄
+
+Debug the pattern, not the pod.
+
+
+
+
+Nice 😄
+After you answer “I’ll filter failing pods and look for patterns” —
+interviewer almost ALWAYS asks:
+
+“Okay… what if ALL pods are restarting?”
+
+This is a very important branching question.
+Now they test: Do you think infra issue or application issue?
+
+How You Should Think
+
+If one pod fails → node / scheduling / pod specific issue
+If all replicas fail → common dependency or configuration
+
+So immediately say:
+
+If all pods restart, I will suspect shared dependency, configuration, or probe failure instead of individual pod problem.
+
+Structured Debug Flow (Answer Like This)
+1️⃣ Check Recent Changes (Most Real Incidents)
+
+First question in production:
+
+kubectl rollout history deploy <app>
+
+Look for:
+
+new image pushed
+
+new configmap
+
+secret rotated
+
+env variable changed
+
+💡 70% of outages = recent deployment
+
+2️⃣ Check Namespace Events (Pattern Detection)
+kubectl get events --sort-by=.lastTimestamp
+
+You may see:
+
+Readiness probe failed
+Failed to pull secret
+Mount volume failed
+
+One message repeating = root cause.
+
+3️⃣ Check Logs From All Pods Together
+kubectl logs -l app=myapp --tail=50
+
+If every pod shows:
+
+database connection refused
+redis timeout
+config missing
+
+Then problem confirmed → dependency
+
+4️⃣ Check Dependencies (VERY COMMON REAL ANSWER)
+
+Test connectivity from inside a pod:
+
+kubectl exec -it <pod> -- sh
+
+Then:
+
+nc -zv db-service 5432
+curl http://auth-service
+nslookup redis
+
+If failing → service or DNS issue.
+
+5️⃣ Health Probe Failure (Most Asked in Interviews)
+
+Pods restarting but container works manually:
+
+Means liveness probe killing it.
+
+Check:
+
+kubectl describe pod | grep -A5 Liveness
+
+Typical causes:
+
+slow startup
+
+wrong path
+
+wrong port
+
+dependency delay
+
+6️⃣ Resource Limits (Cluster-wide)
+
+If all pods OOMKilled:
+
+kubectl top pods
+kubectl describe pod | grep OOM
+
+Possible:
+
+new version uses more memory
+
+limit too small
+
+What Interviewer Wants to Hear (Key Insight)
+
+You should say:
+
+When all replicas fail simultaneously, it indicates a shared component failure such as database, configuration, DNS, or health probe misconfiguration rather than individual pod issues.
+
+Perfect Final Answer (Memorize)
+
+If all pods restart, I’ll first check recent rollout changes, then namespace events for repeating errors, then aggregated logs to identify common failure, and finally verify shared dependencies like DB, DNS, or liveness probe configuration.
+
+
+
+A policy defines permissions in JSON format.
+A role is an identity that has those policies attached and can be assumed temporarily by services or users.
+An instance profile is a container that allows an EC2 instance to obtain the role’s temporary credentials securely via the metadata service.
+So EC2 never stores access keys — it gets short-lived credentials through the instance profile attached role.
+
+
+
+Code commit
+   ↓
+Build (Jenkins/Harness)
+   ↓
+Store artifact in S3
+   ↓
+Deploy to Kubernetes
+   ↓
+Notify via SNS
+   ↓
+Logs to monitoring
+
+
+Since 504 means upstream timeout, I will first check the Ingress controller logs because it usually generates the timeout.
+Next I will verify the Service endpoints to ensure pods are correctly mapped.
+Then I will test connectivity from the ingress pod to the service using curl.
+If that works, I will investigate node networking or CNI issues.
+DNS will be last because DNS failures produce resolution errors, not timeouts.
+
+
+
+“Pod Security in Kubernetes enforces security policies at the pod and namespace level to prevent containers from running with unsafe privileges. The three Pod Security Standards—Privileged, Baseline, and Restricted—control how tightly workloads are secured.”
+
+
+
+
+
